@@ -1,7 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = typeof __API_URL__ !== "undefined" ? __API_URL__ : "http://127.0.0.1:8000/api/";
-
+const BASE_URL = import.meta.env.VITE_API_URL || "https://web-production-1124a.up.railway.app/api/";
 const api = axios.create({
   baseURL: BASE_URL,
 });
