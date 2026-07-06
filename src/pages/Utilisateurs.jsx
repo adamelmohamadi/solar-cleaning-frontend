@@ -5,7 +5,8 @@ import { useAuth } from "../context/AuthContext";
 import Loader from "../components/ui/Loader";
 import EmptyState from "../components/ui/EmptyState";
 import useToast from "../hooks/useToast";
-import { ThumbsUp, Minus, ThumbsDown, KeyRound, Eye, EyeOff } from "lucide-react";
+import { ThumbsUp, Minus, ThumbsDown, KeyRound, FileText } from "lucide-react";
+import jsPDF from "jspdf";
 
 const getRoleClass = (role) => {
   switch (role) {
@@ -48,6 +49,98 @@ const initialErrors = {
 const validerEmail = (email) => {
   if (!email) return true;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
+const genererFicheClient = (client, password = null) => {
+  const doc = new jsPDF();
+  const today = new Date().toLocaleDateString("fr-FR");
+
+  doc.setFillColor(15, 42, 30);
+  doc.rect(0, 0, 210, 40, "F");
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.text("Unisystem Energy", 14, 18);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.text("Fiche confidentielle — Accès client", 14, 28);
+  doc.text(`Générée le ${today}`, 14, 35);
+
+  doc.setTextColor(15, 42, 30);
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text("Informations du compte", 14, 58);
+  doc.setDrawColor(21, 128, 61);
+  doc.setLineWidth(0.5);
+  doc.line(14, 62, 196, 62);
+
+  const infos = [
+    ["Nom complet", client.nom],
+    ["Nom d'utilisateur", client.username],
+    ["Mot de passe", password || "••••••••"],
+    ["Email", client.email !== "—" ? client.email : "Non renseigné"],
+    ["Lien de connexion", "https://solar-cleaning-frontend-orpin.vercel.app"],
+  ];
+
+  let y = 74;
+  infos.forEach(([label, value]) => {
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(16, 32, 21);
+    doc.text(label + " :", 14, y);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(60, 60, 60);
+    doc.text(String(value), 80, y);
+    y += 10;
+  });
+
+  y += 6;
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 42, 30);
+  doc.text("Projets associés", 14, y);
+  y += 4;
+  doc.setDrawColor(21, 128, 61);
+  doc.line(14, y, 196, y);
+  y += 10;
+
+  if (client.projets.length === 0) {
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(90, 90, 90);
+    doc.text("Aucun projet associé.", 14, y);
+  } else {
+    client.projets.forEach((p) => {
+      doc.setFillColor(238, 243, 234);
+      doc.roundedRect(14, y - 5, 182, 16, 3, 3, "F");
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(16, 32, 21);
+      doc.text(p.nom, 20, y + 2);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(90, 90, 90);
+      doc.text(p.localisation, 20, y + 8);
+      y += 22;
+    });
+  }
+
+  y += 10;
+  doc.setFillColor(255, 243, 205);
+  doc.roundedRect(14, y, 182, 22, 3, 3, "F");
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(133, 79, 11);
+  doc.text("Document confidentiel", 20, y + 8);
+  doc.setFont("helvetica", "normal");
+  doc.text("Ces informations sont strictement personnelles. Ne pas partager.", 20, y + 16);
+
+  doc.setFillColor(15, 42, 30);
+  doc.rect(0, 277, 210, 20, "F");
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.text("Unisystem Energy — Document généré automatiquement", 105, 288, { align: "center" });
+
+  doc.save(`fiche-client-${client.username}.pdf`);
 };
 
 export default function Utilisateurs() {
@@ -137,11 +230,12 @@ export default function Utilisateurs() {
     }
   };
 
-  const handleResetPassword = async (client) => {
-    if (!window.confirm(`Générer un nouveau mot de passe pour ${client.nom} ?`)) return;
+  const handleResetEtFiche = async (client) => {
+    if (!window.confirm(`Générer un nouveau mot de passe pour ${client.nom} et télécharger la fiche ?`)) return;
     try {
       const result = await resetPasswordClient(client.id);
       setCredentialsModal(result);
+      genererFicheClient(client, result.password);
     } catch {
       showToast("Erreur lors de la réinitialisation", "error");
     }
@@ -161,19 +255,12 @@ export default function Utilisateurs() {
         )}
       </div>
 
-      {/* Onglets */}
       <div className="filtre-bar">
-        <button
-          className={`filtre-btn ${onglet === "equipe" ? "filtre-btn-active" : ""}`}
-          onClick={() => setOnglet("equipe")}
-        >
+        <button className={`filtre-btn ${onglet === "equipe" ? "filtre-btn-active" : ""}`} onClick={() => setOnglet("equipe")}>
           Équipe
         </button>
         {estAdmin && (
-          <button
-            className={`filtre-btn ${onglet === "clients" ? "filtre-btn-active" : ""}`}
-            onClick={() => setOnglet("clients")}
-          >
+          <button className={`filtre-btn ${onglet === "clients" ? "filtre-btn-active" : ""}`} onClick={() => setOnglet("clients")}>
             Clients
           </button>
         )}
@@ -322,23 +409,29 @@ export default function Utilisateurs() {
                       <h2>{client.nom}</h2>
                       <span style={{ fontSize: 13, color: "#5B6B5C" }}>@{client.username}</span>
                     </div>
-                    <button
-                      className="text-button"
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
-                      onClick={() => handleResetPassword(client)}
-                    >
-                      <KeyRound size={14} />
-                      Réinitialiser le mot de passe
-                    </button>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        className="text-button"
+                        style={{ display: "flex", alignItems: "center", gap: 6 }}
+                        onClick={() => genererFicheClient(client)}
+                      >
+                        <FileText size={14} />
+                        Fiche client
+                      </button>
+                      <button
+                        className="text-button"
+                        style={{ display: "flex", alignItems: "center", gap: 6 }}
+                        onClick={() => handleResetEtFiche(client)}
+                      >
+                        <KeyRound size={14} />
+                        Réinitialiser + Fiche
+                      </button>
+                    </div>
                   </div>
 
                   <div style={{ padding: "0 1.25rem 1rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-
-                    {/* Projets */}
                     <div>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: "#102015", marginBottom: 8 }}>
-                        Projets associés
-                      </p>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#102015", marginBottom: 8 }}>Projets associés</p>
                       {client.projets.length === 0 ? (
                         <p style={{ fontSize: 13, color: "#5B6B5C" }}>Aucun projet.</p>
                       ) : (
@@ -351,11 +444,8 @@ export default function Utilisateurs() {
                       )}
                     </div>
 
-                    {/* Avis récents */}
                     <div>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: "#102015", marginBottom: 8 }}>
-                        Avis récents
-                      </p>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#102015", marginBottom: 8 }}>Avis récents</p>
                       {client.avis_recents.length === 0 ? (
                         <p style={{ fontSize: 13, color: "#5B6B5C" }}>Aucun avis pour le moment.</p>
                       ) : (
@@ -365,12 +455,8 @@ export default function Utilisateurs() {
                               <SatisfactionIcon satisfaction={a.satisfaction} />
                               <span style={{ fontSize: 11, color: "#5B6B5C" }}>{a.date}</span>
                             </div>
-                            {a.commentaire && (
-                              <p style={{ fontSize: 12, color: "#5B6B5C", margin: 0 }}>{a.commentaire}</p>
-                            )}
-                            {a.confirme && (
-                              <p style={{ fontSize: 11, color: "#15803D", margin: "4px 0 0" }}>✓ Nettoyage confirmé</p>
-                            )}
+                            {a.commentaire && <p style={{ fontSize: 12, color: "#5B6B5C", margin: 0 }}>{a.commentaire}</p>}
+                            {a.confirme && <p style={{ fontSize: 11, color: "#15803D", margin: "4px 0 0" }}>✓ Nettoyage confirmé</p>}
                           </div>
                         ))
                       )}
@@ -385,17 +471,11 @@ export default function Utilisateurs() {
 
       {/* Modal credentials */}
       {credentialsModal && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          zIndex: 1000, padding: "2rem"
-        }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "2rem" }}>
           <div style={{ background: "#fff", borderRadius: 12, padding: "2rem", maxWidth: 400, width: "100%", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
-            <h3 style={{ fontWeight: 600, marginBottom: 8, color: "#102015" }}>
-              Nouveau mot de passe
-            </h3>
+            <h3 style={{ fontWeight: 600, marginBottom: 8, color: "#102015" }}>Nouveau mot de passe généré</h3>
             <p style={{ fontSize: 14, color: "#5B6B5C", marginBottom: 16 }}>
-              Transmettez ces identifiants à <strong style={{ color: "#102015" }}>{credentialsModal.nom}</strong>.
+              La fiche PDF a été téléchargée automatiquement pour <strong style={{ color: "#102015" }}>{credentialsModal.nom}</strong>.
             </p>
             <div style={{ background: "#EEF3EA", borderRadius: 8, padding: "1rem", marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 14 }}>
@@ -408,7 +488,7 @@ export default function Utilisateurs() {
               </div>
             </div>
             <p style={{ fontSize: 12, color: "#CA8A04", marginBottom: 16 }}>
-              ⚠ Notez ces identifiants — ils ne seront plus affichés après fermeture.
+              ⚠ Ces identifiants sont aussi dans la fiche PDF téléchargée.
             </p>
             <button className="primary-button" style={{ width: "100%" }} onClick={() => setCredentialsModal(null)}>
               Compris, fermer
