@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import MainLayout from "../components/layout/MainLayout";
 import { recupererStatistiques } from "../services/ServiceTableauDeBord";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import api from "../services/api";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import {
   FolderKanban,
   Clock,
   CheckCircle2,
   AlertTriangle,
   TrendingUp,
+  ThumbsUp,
+  Minus,
+  ThumbsDown,
 } from "lucide-react";
 
 const statutStyles = {
@@ -64,16 +68,39 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
+function SatisfactionIcon({ satisfaction }) {
+  if (satisfaction === "SATISFAIT") return (
+    <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#15803D" }}>
+      <ThumbsUp size={14} /> Satisfait
+    </span>
+  );
+  if (satisfaction === "NEUTRE") return (
+    <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#CA8A04" }}>
+      <Minus size={14} /> Neutre
+    </span>
+  );
+  return (
+    <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#DC2626" }}>
+      <ThumbsDown size={14} /> Insatisfait
+    </span>
+  );
+}
+
 export default function TableauDeBord() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [erreur, setErreur] = useState(null);
+  const [avis, setAvis] = useState([]);
 
   useEffect(() => {
     recupererStatistiques()
       .then(setData)
       .catch(() => setErreur("Impossible de charger les données du tableau de bord."))
       .finally(() => setLoading(false));
+
+    api.get("avis-admin/")
+      .then(r => setAvis(r.data))
+      .catch(() => {});
   }, []);
 
   if (loading) {
@@ -210,6 +237,51 @@ export default function TableauDeBord() {
           )}
         </div>
       </div>
+
+      {/* Avis clients */}
+      {avis.length > 0 && (
+        <div className="mt-6 rounded-xl border border-border bg-card p-5">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">Avis clients</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground">
+                  <th className="py-2 pr-4">Client</th>
+                  <th className="py-2 pr-4">Projet</th>
+                  <th className="py-2 pr-4">Date nettoyage</th>
+                  <th className="py-2 pr-4">Satisfaction</th>
+                  <th className="py-2 pr-4">Confirmé</th>
+                  <th className="py-2 pr-4">Commentaire</th>
+                </tr>
+              </thead>
+              <tbody>
+                {avis.map((a) => (
+                  <tr key={a.id} className="border-b border-border last:border-0">
+                    <td className="py-3 pr-4 font-medium text-foreground">{a.client}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{a.projet}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{a.date_nettoyage}</td>
+                    <td className="py-3 pr-4">
+                      <SatisfactionIcon satisfaction={a.satisfaction} />
+                    </td>
+                    <td className="py-3 pr-4">
+                      {a.confirme ? (
+                        <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#15803D" }}>
+                          <CheckCircle2 size={14} /> Oui
+                        </span>
+                      ) : (
+                        <span style={{ color: "#5B6B5C", fontSize: 13 }}>Non</span>
+                      )}
+                    </td>
+                    <td className="py-3 pr-4 text-muted-foreground">
+                      {a.commentaire || "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Activité récente */}
       <div className="mt-6 rounded-xl border border-border bg-card p-5">

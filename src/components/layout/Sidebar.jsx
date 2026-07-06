@@ -33,16 +33,24 @@ const navItemsMainteneur = [
   { to: "/notifications", label: "Notifications", icon: Bell },
 ];
 
+const navItemsClient = [
+  { To: "/", label: "Mon installation", icon: SprayCan },
+  { to: "/notifications", label: "Notifications", icon: Bell },
+]
+
 export default function Sidebar({ onClose }) {
   const { utilisateur } = useAuth();
 
   const estAdmin = utilisateur?.is_superuser || utilisateur?.role === "DIRECTEUR_GENERAL";
   const estMainteneur = !estAdmin && utilisateur?.role === "MAINTENEUR";
+  const estClient = !estAdmin && utilisateur?.role === "CLIENT";
 
   const navItems = estAdmin
     ? navItemsAdmin
     : estMainteneur
     ? navItemsMainteneur
+    : estClient
+    ? navItemsClient
     : navItemsConsultation;
 
   return (

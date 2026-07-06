@@ -18,6 +18,7 @@ export default function ProjectForm({ initialData = {}, onSubmit, submitLabel })
     frequence_nettoyage: initialData.frequence_nettoyage || "",
     latitude: initialData.latitude || null,
     longitude: initialData.longitude || null,
+    nom_client: initialData.nom_client || "",
   });
   const [errors, setErrors] = useState(initialErrors);
   const [geocodage, setGeocodage] = useState({ statut: "idle", message: "" });
@@ -150,6 +151,18 @@ export default function ProjectForm({ initialData = {}, onSubmit, submitLabel })
           />
           {errors.frequence_nettoyage && <span className="input-error">{errors.frequence_nettoyage}</span>}
         </div>
+      </div>
+
+      <div className="form-row">
+        <label>Nom complet du client <span className="form-optional">(optionnel)</span></label>
+        <input
+          value={formState.nom_client}
+          onChange={handleChange("nom_client")}
+          placeholder="Ex : Mohamed Benali"
+        />
+        <span style={{ fontSize: 12, color: "#5B6B5C", marginTop: 4, display: "block" }}>
+          Un compte client sera créé automatiquement pour accéder au suivi de son installation.
+        </span>
       </div>
 
       <div className="form-actions">

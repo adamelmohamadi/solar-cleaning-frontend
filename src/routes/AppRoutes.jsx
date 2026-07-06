@@ -13,6 +13,7 @@ import ModifierProjet from "../pages/ModifierProjet";
 import AjouterNettoyage from "../pages/AjouterNettoyage";
 import ModifierNettoyage from "../pages/ModifierNettoyage";
 import Profil from "../pages/Profil";
+import MonInstallation from "../pages/MonInstallation";
 
 function RouteProtegee({ children }) {
   const { utilisateur, chargement } = useAuth();
@@ -25,8 +26,10 @@ function RouteAccueil() {
   const { utilisateur } = useAuth();
   const estAdmin = utilisateur?.is_superuser || utilisateur?.role === "DIRECTEUR_GENERAL";
   const estMainteneur = !estAdmin && utilisateur?.role === "MAINTENEUR";
+  const estClient = !estAdmin && utilisateur?.role === "CLIENT";
 
   if (estMainteneur) return <Nettoyages />;
+  if (estClient) return <MonInstallation />;
   return <TableauDeBord />;
 }
 
@@ -47,6 +50,7 @@ export default function AppRoutes() {
         <Route path="/notifications" element={<RouteProtegee><Notifications /></RouteProtegee>} />
         <Route path="/nettoyages/:id/modifier" element={<RouteProtegee><ModifierNettoyage /></RouteProtegee>} />
         <Route path="/profil" element={<RouteProtegee><Profil /></RouteProtegee>} />
+        <Route path="/mon-installation" element={<RouteProtegee><MonInstallation/></RouteProtegee>} />
       </Routes>
     </BrowserRouter>
   );
