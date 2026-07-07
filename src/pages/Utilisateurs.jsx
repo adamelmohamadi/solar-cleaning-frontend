@@ -79,7 +79,7 @@ const genererFicheClient = (client, password = null) => {
     ["Nom d'utilisateur", client.username],
     ["Mot de passe", password || "••••••••"],
     ["Email", client.email !== "—" ? client.email : "Non renseigné"],
-    ["Lien de connexion", "https://solar-cleaning-frontend-orpin.vercel.app"],
+    ["Lien de connexion", "https://unisystem-energy-management-nettoyage.vercel.app"],
   ];
 
   let y = 74;

@@ -34,9 +34,9 @@ const navItemsMainteneur = [
 ];
 
 const navItemsClient = [
-  { To: "/", label: "Mon installation", icon: SprayCan },
+  { to: "/mon-installation", label: "Mon Installation", icon: SprayCan },
   { to: "/notifications", label: "Notifications", icon: Bell },
-]
+];
 
 export default function Sidebar({ onClose }) {
   const { utilisateur } = useAuth();

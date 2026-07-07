@@ -29,7 +29,7 @@ function RouteAccueil() {
   const estClient = !estAdmin && utilisateur?.role === "CLIENT";
 
   if (estMainteneur) return <Nettoyages />;
-  if (estClient) return <MonInstallation />;
+  if (estClient) return <Navigate to="/mon-installation" replace />;
   return <TableauDeBord />;
 }
 
@@ -50,7 +50,7 @@ export default function AppRoutes() {
         <Route path="/notifications" element={<RouteProtegee><Notifications /></RouteProtegee>} />
         <Route path="/nettoyages/:id/modifier" element={<RouteProtegee><ModifierNettoyage /></RouteProtegee>} />
         <Route path="/profil" element={<RouteProtegee><Profil /></RouteProtegee>} />
-        <Route path="/mon-installation" element={<RouteProtegee><MonInstallation/></RouteProtegee>} />
+        <Route path="/mon-installation" element={<RouteProtegee><MonInstallation /></RouteProtegee>} />
       </Routes>
     </BrowserRouter>
   );
